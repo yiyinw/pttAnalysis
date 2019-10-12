@@ -20,11 +20,11 @@ def parse_ip(text):
     match = re.search(r'(\d+\.\d+\.\d+\.\d+)(.*)', text)
     if match:
         ip = match.group(1)
-        rest = match.group(2).strip("()")
+        rest = match.group(2)
     else:
         ip = 'unknown'
         rest = text
-    return ip, rest
+    return ip, rest.strip("() ")
 
 def flatten(nested):
     for sublist in nested:

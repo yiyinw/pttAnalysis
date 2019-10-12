@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
+from multiprocessing.dummy import Pool as ThreadPool
 from requests_html import HTML, HTMLSession, HTMLResponse
 import utils
 from users import Author, Commentor
 from urllib.parse import urljoin
+import time
 
 domain = "https://www.ptt.cc/"
 
@@ -37,7 +39,12 @@ class Board():
         while len(post_links) <= num_posts:
             post_links += list(utils.flatten(self.parse_pages(num_posts)))
 
-        return [Post(l) for l in post_links[:num_posts]]
+        start_time = time.time()
+        pool = ThreadPool(4) # multithreading speed it up by 3x!
+        posts = pool.map(Post, post_links[:num_posts])
+        #posts = [Post(l) for l in post_links]
+        print('Spend: %f secs to download the posts' % (time.time() - start_time))
+        return posts
 
     def parse_pages(self, num_posts):
         ''':return a list of Post objects in this page'''
@@ -95,6 +102,7 @@ class Post():
         resp = agent.get(url)
 
         try:
+
             main = resp.html.find('#main-content', first=True)
             title, category, country, author = self._parse_meta_and_post_line(main)
             votes, commentors = self._parse_comments(main)
@@ -139,9 +147,13 @@ class Post():
                 push_iptime = push.find('span.push-ipdatetime', first=True).text
                 ip, comment_time = utils.parse_ip(push_iptime)  # dt looks like 10/12 05:39
                 # make the timestamp consistent with post creation time
-                dt = datetime.strptime(comment_time, '%m/%d %H:%M')
-                dt = dt.replace(year=2019)
-                commentors.append(Commentor(push_uid, ip, dt.ctime(), rec_type))
+                try:
+                    dt = datetime.strptime(comment_time, '%m/%d %H:%M')
+                    dt = dt.replace(year=2019)
+                    dt = dt.ctime()
+                except ValueError:
+                    dt = 'unknown'
+                commentors.append(Commentor(push_uid, ip, dt, rec_type))
 
         votes['score'] = votes['pos'] - votes['neg']
         return votes, commentors
