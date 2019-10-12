@@ -22,3 +22,22 @@ class TestUtils(unittest.TestCase):
     def test_make_url(self):
         r = utils.make_ptt_url('https://ptt.cc', 'movie', '39400')
         self.assertEqual(r, 'https://ptt.cc/bbs/movie/index39400.html')
+
+    def test_get_user_handle(self):
+        r1 = utils.get_user_handle("a15568 (玉米)")
+        r2 = utils.get_user_handle("a15568 ()")
+        r3 = utils.get_user_handle(None)
+        self.assertEqual(r1, "a15568")
+        self.assertEqual(r2, "a15568")
+        self.assertEqual(r3, "")
+
+    def test_parse_ip(self):
+        txt = "※ 發信站: 批踢踢實業坊(ptt.cc), 來自: 223.137.204.135 (臺灣)"
+        t2 = "10/12 21:53"
+        ip, country = utils.parse_ip(txt)
+        ip2, dt = utils.parse_ip(t2)
+        self.assertEqual(ip, "223.137.204.135")
+        self.assertEqual(country, "臺灣")
+        #self.assertEqual(ip2, 'unknown')
+        self.assertEqual(dt, "10/12 21:53")
+
